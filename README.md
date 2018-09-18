@@ -1,2 +1,2 @@
-# instant_validator
+# instant-validator
 Instant validator snippet
