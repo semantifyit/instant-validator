@@ -206,12 +206,12 @@ this.IV_Init = function (settings) {
                 var loaderSelector = $("#urlloader");
 
                 if(loaderSelector.length!==0){
-                    var thisButton = $("#panel-footer-btn-validateb");
-
                     loaderSelector.remove();
-                    buttonStatus(thisButton, false);
-
                 }
+
+                var thisButton = $("#panel-footer-btn-validateb");
+                buttonStatus(thisButton, false);
+
 
 
                 if (typeof saveRes !== "undefined") {
