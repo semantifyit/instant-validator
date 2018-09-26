@@ -212,8 +212,6 @@ this.IV_Init = function (settings) {
                 var thisButton = $("#panel-footer-btn-validateb");
                 buttonStatus(thisButton, false);
 
-
-
                 if (typeof saveRes !== "undefined") {
 
                     //snackBarOptions["content"] = "Successfully saved Annotation to semantify.it";
@@ -252,6 +250,8 @@ this.IV_Init = function (settings) {
                             });
 
                         });
+
+
                     }
 
 
@@ -270,6 +270,8 @@ this.IV_Init = function (settings) {
                         '<pre id="IA_preview_textArea" style="max-height: 300px;">' + saveRes.validationResult.message + '</pre>' +
                         '<br/>' +
                         report +
+                        '<br/>'+
+                        'Would you like to see more results? Check out our <a href="https://semantify.it/validator/?mode=basic&url='+$("#url-input input").val()+'">semantify.it validator</a>.'+
                         '<br/><br/><br/>' +
                         '<div class="modal-footer">' +
                         '<button type="button" class="btn btn-default" data-dismiss="modal">Close</button>' +
@@ -341,7 +343,16 @@ this.IV_Init = function (settings) {
                             return false;
                         } else {
                             var toSend = {};
-                            toSend["annotation"] = JSON.parse(textareaVal);
+
+                            try{
+                                toSend["annotation"] = JSON.parse(textareaVal);
+                                console.log(JSON.parse(json));
+                            } catch (e) {
+                                send_snackbarMSG("There was an error during JSON parsing. Please check if JSON is properly formated.", 3000);
+                                buttonStatus(thisButton, false);
+                                return false;
+                            }
+
                             validateAnnotation(toSend);
                         }
 
