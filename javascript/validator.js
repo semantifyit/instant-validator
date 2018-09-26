@@ -31,8 +31,8 @@ this.IV_Init = function (settings) {
         /* <!-- History --> */
         ['$.fn.datetimepicker', 'https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datetimepicker/4.17.47/js/bootstrap-datetimepicker.min.js'],
         /* semantify api */
-        //["SemantifyIt","https://rawgit.com/semantifyit/semantify-api-js/master/semantify.js"]
-        ["SemantifyIt", "http://sti.dev/semantify-api-js/semantify.js"]
+        ["SemantifyIt","https://rawgit.com/semantifyit/semantify-api-js/master/semantify.js"]
+        //["SemantifyIt", "http://sti.dev/semantify-api-js/semantify.js"]
     ];
 
     /* well we have to use globaliterator (but only in this scope limited in self call function)
