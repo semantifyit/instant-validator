@@ -4,6 +4,7 @@
 /* we use sandbox, so all funcitons are here as local */
 this.IV_Init = function (settings) {
 
+    var Responses = [];
     /* our dependecies */
     var depScripts = [
         /* condidtion and url */
@@ -31,7 +32,7 @@ this.IV_Init = function (settings) {
         /* <!-- History --> */
         ['$.fn.datetimepicker', 'https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datetimepicker/4.17.47/js/bootstrap-datetimepicker.min.js'],
         /* semantify api */
-        ["SemantifyIt","https://rawgit.com/semantifyit/semantify-api-js/master/semantify.js"]
+        ["SemantifyIt", "https://rawgit.com/semantifyit/semantify-api-js/master/semantify.js"]
         //["SemantifyIt", "http://sti.dev/semantify-api-js/semantify.js"]
     ];
 
@@ -186,6 +187,7 @@ this.IV_Init = function (settings) {
         var sdoClassesReady = false;
         var panelCount = 0;
 
+
         var panelRoots = [];
         var typeList = [];
         var inputFields = [];
@@ -200,102 +202,10 @@ this.IV_Init = function (settings) {
         var saveApiKey = defaultSemantifyApiKey;
         var semantifyToken;
 
-        var validateAnnotation =  function(toSend) {
+        var validateAnnotation = function (toSend) {
             Semantify.validateAnnotation(toSend, function (saveRes) {
-
-                var loaderSelector = $("#urlloader");
-
-                if(loaderSelector.length!==0){
-                    loaderSelector.remove();
-                }
-
-                var thisButton = $("#panel-footer-btn-validateb");
-                buttonStatus(thisButton, false);
-
-                if (typeof saveRes !== "undefined") {
-
-                    //snackBarOptions["content"] = "Successfully saved Annotation to semantify.it";
-                    //$.snackbar(snackBarOptions);
-
-                    var dummy = document.createElement("div");
-                    document.body.appendChild(dummy);
-                    dummy.setAttribute("id", "IA_preview_id");
-
-                    var color = "rgb(217, 83, 79)";
-                    var text = "Failed";
-                    if (saveRes.validationResult.isValid) {
-                        color = "rgb(92, 184, 92)";
-                        text = "Correct";
-                    }
-
-                    var report="";
-
-                    if (!saveRes.validationResult.isValid) {
-
-                        var types = Object.keys(saveRes.validationResult.payload.annotation);
-
-                        types.forEach(function (type) {
-                            var i = 0;
-
-                            saveRes.validationResult.payload.annotation[type].forEach(function (annotation) {
-
-                                var anno = JSON.stringify(annotation);
-                                var annohtml = "<div class='annotation'>" +
-                                    "<div class='annotation-error'>" + saveRes.validationResult.payload.errorReport[i].message + "</div>" +
-                                    "<pre>" + anno + "</pre>" +
-                                    "</div>";
-
-                                report = report + annohtml;
-                                i++;
-                            });
-
-                        });
-
-
-                    }
-
-
-                    $('#IA_preview_id').append(
-                        '<div class="bootstrap semantify semantify-instant-annotations">' +
-                        '<div class="modal fade" id="IA_saveModal" role="dialog">' +
-                        '<div class="modal-dialog">' +
-                        '<div class="modal-content">' +
-                        '<div class="modal-header">' +
-                        '<button type="button" class="close" data-dismiss="modal">&times;</button>' +
-                        '<h3 class="modal-title">Validation result</h3>' +
-                        '</div>' +
-                        '<div class="modal-body">' +
-                        '<div class="" style="padding:8px 4px 8px 4px; color: rgba(255, 255, 255, 0.843137);background-color: ' + color + ';">' + text + '</div>' +
-                        '<br/>' +
-                        '<pre id="IA_preview_textArea" style="max-height: 300px;">' + saveRes.validationResult.message + '</pre>' +
-                        '<br/>' +
-                        report +
-                        '<br/>'+
-                        'Would you like to see more results? Check out our <a href="https://semantify.it/validator/?mode=basic&url='+$("#url-input input").val()+'">semantify.it validator</a>.'+
-                        '<br/><br/><br/>' +
-                        '<div class="modal-footer">' +
-                        '<button type="button" class="btn btn-default" data-dismiss="modal">Close</button>' +
-                        '</div>' +
-                        '</div>' +
-                        '</div>' +
-                        '</div>' +
-                        '</div>'
-                    );
-
-
-                    $('#IA_saveModal')
-                        .modal()
-                        .on('hidden.bs.modal', function () {
-                            $(this).remove();
-                        });
-
-                }
-                else {
-                    snackBarOptions["content"] = "There was an error validating annotation to semantify.it";
-                    $.snackbar(snackBarOptions);
-                }
-            })
-
+                validationCallback(saveRes)
+            });
         };
 
 
@@ -321,7 +231,7 @@ this.IV_Init = function (settings) {
 
                 var processingtype = "url";
 
-                if(thisButton.data("disable")===false) {
+                if (thisButton.data("disable") === false) {
 
                     buttonStatus(thisButton, true);
 
@@ -341,20 +251,27 @@ this.IV_Init = function (settings) {
                             send_snackbarMSG("Please fill in all required fields", 3000);
                             buttonStatus(thisButton, false);
                             return false;
-                        } else {
-                            var toSend = {};
+                        }
 
-                            try{
-                                toSend["annotation"] = JSON.parse(textareaVal);
-                                console.log(JSON.parse(json));
-                            } catch (e) {
-                                send_snackbarMSG("There was an error during JSON parsing. Please check if JSON is properly formated.", 3000);
+                        var toSend = {};
+
+                        try {
+                            toSend["annotation"] = JSON.parse(textareaVal);
+
+                            if ($.isEmptyObject(toSend["annotation"])) {
+                                send_snackbarMSG("JSON is empty", 3000);
                                 buttonStatus(thisButton, false);
                                 return false;
                             }
 
-                            validateAnnotation(toSend);
+                        } catch (e) {
+                            send_snackbarMSG("There was an error during JSON parsing. Please check if JSON is properly formated.", 3000);
+                            buttonStatus(thisButton, false);
+                            return false;
                         }
+
+                        validateAnnotation(toSend);
+
 
                     } else {
                         if (urlVal === "") {
@@ -375,6 +292,7 @@ this.IV_Init = function (settings) {
                         //show loader
                         $('#url-input').append(getLoader(loaderid, "1 / 3 Retrieving webpage ..."));
 
+
                         var toSend = {};
                         toSend["url"] = urlVal;
 
@@ -382,7 +300,7 @@ this.IV_Init = function (settings) {
 
                             console.log(response);
 
-                            if ((response!==undefined) && (response.source!==undefined)) {
+                            if ((response !== undefined) && (response.source !== undefined)) {
 
                                 updateLoaderStatus(loaderid, "2 / 3 Extracting annotations ...");
 
@@ -391,13 +309,44 @@ this.IV_Init = function (settings) {
 
                                 Semantify.extractJsonld(toSend, function (response) {
 
-                                    updateLoaderStatus(loaderid, "3 / 3 Validating annotations ...");
-                                    console.log(response);
-                                    console.log(response.annotation.jsonld);
+                                    if( $.isEmptyObject(response.annotation.jsonld)
+                                        && $.isEmptyObject(response.annotation.rdfa)
+                                        && $.isEmptyObject(response.annotation.microdata)
+                                    ){
+                                        send_snackbarMSG("No annotation found on the website", 3000);
+                                        buttonStatus(thisButton, false);
+                                        $("#" + loaderid).remove();
+                                    }
 
-                                    var toSend = {};
-                                    toSend["annotation"] = response.annotation.jsonld;
-                                    validateAnnotation(toSend);
+                                    updateLoaderStatus(loaderid, "3 / 3 Validating annotations ...");
+
+
+                                    var types = Object.keys(response.annotation.jsonld);
+
+                                    var jobs = [];
+
+                                    types.forEach(function (type) {
+
+                                        var toSend = {};
+                                        toSend["annotation"] = response.annotation.jsonld[type][0];
+                                        jobs.push(
+                                            Semantify.validateAnnotation(toSend, function (saveRes) {
+                                                Responses.push(saveRes);
+                                                console.log(types.length, Responses.length);
+                                                if (types.length == Responses.length) {
+                                                    validationCallback(Responses);
+                                                }
+                                            })
+                                        );
+                                    });
+
+                                    $.when.apply(null, jobs).done(function () {
+                                        //var Res = Responses;
+                                        console.log("all done", Responses);
+                                        //console.log(Res);
+                                        //;
+                                    });
+
                                 });
 
                             } else {
@@ -579,241 +528,6 @@ this.IV_Init = function (settings) {
             return but;
         }
 
-        function fillBox(panelId, UID) {
-            $('#panel-' + panelId).data("smtfyAnnId", UID);
-            var allInputs = getAllInputs(panelId);
-            Semantify.getAnnotation(UID, function (data) {
-                var flatJson = flatten(data);
-                $('#sub_' + panelId).val(flatJson['@type']).change();
-                allInputs.forEach(function (a) {
-                    var $inputField = $("#" + a);
-                    var path = $inputField.data("name");
-                    var tempValue = flatJson[path.replace(/-/g, ".")];
-                    $inputField.val(tempValue);
-                });
-            });
-        }
-
-        function flatten(o) {
-            var prefix = arguments[1] || "", out = arguments[2] || {}, name;
-            for (name in o) {
-                if (o.hasOwnProperty(name)) {
-                    typeof o[name] === "object" ? flatten(o[name], prefix + name + '.', out) :
-                        out[prefix + name] = o[name];
-                }
-            }
-            return out;
-        }
-
-        function helperRemove(str) {
-            if (str.indexOf(':') != -1) {
-                return str.substr(str.indexOf(':') + 1);
-
-            } else {
-                return str;
-            }
-
-        }
-
-        function addQuickBox($jqueryElement, strbuttons, sub, panelstr, ds, title, cb) {
-            var myPanelId = panelstr;
-            var buttons = getButtons(strbuttons);
-            addBox($jqueryElement, myPanelId, ds, buttons, sub, title, cb);
-        }
-
-        function getDesc(propertyName) {
-            return stripHtml(sdoProperties[propertyName]["description"]);
-        }
-
-        function stripHtml(html) {
-            var tmp = document.createElement('DIV');
-            tmp.innerHTML = html;
-            return tmp.textContent || tmp.innerText || '';
-        }
-
-        function getProps(props, level, fatherType, myPanelId, fatherIsOptional) {
-            var propList = [];
-            for (var p in props) {
-                if (!props.hasOwnProperty(p)) continue;
-                var prop = props[p];
-                if (prop['dsv:expectedType'][0]['@type'] !== "dsv:RestrictedClass") {
-                    var simpleProp = {
-                        "simpleName": prop["schema:name"],
-                        "name": (level === "" ? "" : level + "-") + prop["schema:name"],
-                        "type": prop["dsv:expectedType"][0]["schema:name"],
-                        "fatherType": fatherType,
-                        "isOptional": prop["dsv:isOptional"],
-                        "multipleValuesAllowed": prop["dsv:multipleValuesAllowed"],
-                        "rootIsOptional": fatherIsOptional
-                    };
-
-                    if (prop['dsv:expectedType'][0]['@type'] === 'dsv:RestrictedEnumeration') {
-                        simpleProp["type"] = "Enumeration";
-                        var enums = [];
-                        prop['dsv:expectedType'][0]['dsv:expectedEnumerationValue'].forEach(function (ele) {
-                            enums.push(ele["schema:name"]);
-                        });
-                        simpleProp["enums"] = enums;
-                    }
-
-                    propList.push(simpleProp);
-                }
-                else {
-                    var myLevel = level === "" ? prop["schema:name"] : level + "-" + prop["schema:name"];
-                    var path = myLevel + "-@type";
-                    var pathType = {
-                        "name": prop['dsv:expectedType'][0]['schema:name'],
-                        "path": path,
-                        "panelId": myPanelId
-                    };
-                    typeList.push(pathType);
-                    var fIsOptional = false;
-                    if (fatherIsOptional === true || prop['dsv:isOptional'] === true) {
-                        fIsOptional = true;
-                    }
-                    propList = propList.concat(getProps(prop['dsv:expectedType'][0]["dsv:property"], (level === "" ? prop["schema:name"] : level + "-" + prop["schema:name"]), prop['dsv:expectedType'][0]["schema:name"], myPanelId, fIsOptional));
-                }
-            }
-            return propList;
-        }
-
-        function createJsonLd(id) {
-            var dsName;
-            var schemaName = "Thing";
-            panelRoots.forEach(function (t) {
-                if (t["panelId"] == id) {
-                    dsName = t["name"];
-                    schemaName = t["root"]
-                }
-            });
-            var selected = $('#' + "sub_" + id).val();
-            if (selected != undefined && selected != "" && selected != null) {
-                schemaName = selected;
-            }
-            var validPaths = [];
-            var allPaths = [];
-            var resultJson = {
-                "@context": "http://schema.org/",
-                "@type": schemaName
-            };
-            var allRequired = true; //variable gets false if an required field is empty
-            var allRequiredPaths = true; //variable gets false if an optional field is filled in that has required properties
-            var allInputs = []; //all input ids from same panel
-            var msgs = [];
-
-            inputFields.forEach(function (a) {
-                var compareId = a.slice(a.indexOf("_") + 1, a.indexOf("_", a.indexOf("_") + 1));
-                if (compareId === id.toString()) { //only inputs from same panel
-                    allInputs.push(a);
-                }
-            });
-
-            allInputs.forEach(function (a) {
-                var $inputField = $("#" + a);
-                var value = $inputField.val();
-                var path = $inputField.data("name");
-                var optional = $inputField.data("isOptional");
-                var rootOptional = $inputField.data("rootIsOptional");
-                if ((value === undefined || value === null || value === "" || value.length === 0 || value.length == undefined) && (optional === false && rootOptional === false)) { //if variable is not optional but empty
-                    allRequired = false;
-                }
-                if ((value != undefined && value != null && value != "" && value.length != 0 && value.length != undefined) && rootOptional === true) {
-                    //check if all other paths and sub paths are filled in - else false allRequiredPaths
-                    var bAllPaths = [];
-                    var bPaths = path.split('-');
-                    while (bPaths.length > 1) {
-                        bPaths.pop();
-                        bAllPaths.push((bPaths.join("-")))
-                    }
-                    allInputs.forEach(function (b) {
-                        var $inputElem = $("#" + b);
-                        var bPath = $inputElem.data("name");
-                        var bOptional = $inputElem.data("isOptional");
-                        var bRootOptional = $inputElem.data("rootIsOptional");
-                        var len = (bPath.split("-"));
-                        len = len.length;
-                        var bValue = $inputElem.val();
-                        for (var z = 0; z < bAllPaths.length; z++) {
-                            var len2 = bAllPaths[z].split("-");
-                            len2 = len2.length;
-                            if (bOptional == false && bRootOptional == true && (bPath.indexOf(bAllPaths[z]) >= 0) && len === len2 + 1) {
-                                if (bValue === undefined || bValue === "" || bValue == null || bValue.length === 0 || bValue.length == undefined) {
-                                    msgs.push(bPath);
-                                    allRequiredPaths = false;
-                                }
-                            }
-                        }
-                    });
-                }
-                typeList.forEach(function (t) {
-                    if (t["panelId"] === id) {
-                        var typePath = {
-                            "name": t["name"],
-                            "path": t["path"]
-                        };
-                        allPaths.push(typePath)
-                    }
-                });
-                if (!(value === undefined || value === null || value === "" || value.length === 0 || value.length == undefined)) {
-
-                    var temp = path.split("-");
-                    while (temp.length > 1) {
-                        temp.pop();
-                        var x = temp.join("-") + "-@type";
-                        validPaths.push(x);
-                    }
-
-                    allPaths.forEach(function (a) {
-                        validPaths.forEach(function (v) {
-                            if (v === a["path"]) {
-
-                                resultJson = set(resultJson, a["path"], a["name"])
-                            }
-                        });
-                    });
-
-                    resultJson = set(resultJson, path, value)
-                }
-
-            });
-            if (allRequired && allRequiredPaths) {
-                var result = (JSON.stringify(resultJson));
-                return resultJson;
-            } else {
-                if (!allRequired) {
-                    send_snackbarMSG("Please fill in all required fields", 3000);
-                } else {
-                    msgs = htmlList(unique(msgs));
-                    send_snackbarMSG("Please also fill in <ul>" + msgs.join("") + "</ul>", 3000 + (msgs.length - 1) * 1000);
-                }
-                return null;
-            }
-        }
-
-        function createInjectionCodeForURL(UID) {
-            var code = "function appendAnnotation() {\n" +
-                "\tvar element = document.createElement('script');\n" +
-                "\telement.type = 'application/ld+json';\n" +
-                "\telement.text = this.responseText;\n" +
-                "\tdocument.querySelector('head').appendChild(element);\n" +
-                "}\n" +
-                "var request = new XMLHttpRequest();\n" +
-                "request.onload = appendAnnotation;\n" +
-                'request.open("get", "' + semantifyShortUrl + UID + '", true);\n' +
-                "request.send();";
-            return code;
-        }
-
-        function copyStr(str) {
-            var dummy = document.createElement("textarea");
-            document.body.appendChild(dummy);
-            dummy.setAttribute("id", "dummy_id");
-            dummy.value = str;
-            dummy.select();
-            document.execCommand("copy");
-            document.body.removeChild(dummy);
-            send_snackbarMSG("Annotation copied into your clipboard", 3000);
-        }
 
         function syntaxHighlight(json) {
             json = json.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
@@ -891,24 +605,139 @@ this.IV_Init = function (settings) {
             return /^(https?|ftp):\/\/(((([a-z]|\d|-|\.|_|~|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])|(%[\da-f]{2})|[!\$&'\(\)\*\+,;=]|:)*@)?(((\d|[1-9]\d|1\d\d|2[0-4]\d|25[0-5])\.(\d|[1-9]\d|1\d\d|2[0-4]\d|25[0-5])\.(\d|[1-9]\d|1\d\d|2[0-4]\d|25[0-5])\.(\d|[1-9]\d|1\d\d|2[0-4]\d|25[0-5]))|((([a-z]|\d|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])|(([a-z]|\d|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])([a-z]|\d|-|\.|_|~|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])*([a-z]|\d|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])))\.)+(([a-z]|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])|(([a-z]|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])([a-z]|\d|-|\.|_|~|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])*([a-z]|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])))\.?)(:\d*)?)(\/((([a-z]|\d|-|\.|_|~|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])|(%[\da-f]{2})|[!\$&'\(\)\*\+,;=]|:|@)+(\/(([a-z]|\d|-|\.|_|~|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])|(%[\da-f]{2})|[!\$&'\(\)\*\+,;=]|:|@)*)*)?)?(\?((([a-z]|\d|-|\.|_|~|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])|(%[\da-f]{2})|[!\$&'\(\)\*\+,;=]|:|@)|[\uE000-\uF8FF]|\/|\?)*)?(\#((([a-z]|\d|-|\.|_|~|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])|(%[\da-f]{2})|[!\$&'\(\)\*\+,;=]|:|@)|\/|\?)*)?$/i.test(value);
         }
 
-        function getLoader(loaderId, message){
+        function getLoader(loaderId, message) {
             var html =
                 '<div id="' + loaderId + '" class="" style="text-align: center; ">' +
-                '<div style="display: inline-block;"><img src="https://semantify.it/images/loading.gif"><div style="font-family: Roboto, Helvetica, Arial, sans-serif; color:#474747;font-weight: 300;"><span id="' + loaderId + '_message">'+message+'</span></div></div>' +
+                '<div style="display: inline-block;"><img src="https://semantify.it/images/loading.gif"><div style="font-family: Roboto, Helvetica, Arial, sans-serif; color:#474747;font-weight: 300;"><span id="' + loaderId + '_message">' + message + '</span></div></div>' +
                 '</div>';
             return html;
         }
 
-        function updateLoaderStatus(loaderId,message){
-            $("#"+loaderId+"_message").html(message);
+        function updateLoaderStatus(loaderId, message) {
+            $("#" + loaderId + "_message").html(message);
         }
 
-        function buttonStatus(buttonSelector,disable) {
+        function buttonStatus(buttonSelector, disable) {
             buttonSelector.attr("disabled", disable);
             buttonSelector.data("disable", disable);
         }
 
+        function validationCallback(saveRes) {
 
-    };
+            Responses = [];
 
-};
+            console.log("saveRes");
+            console.log(saveRes);
+
+            var loaderSelector = $("#urlloader");
+
+            if (loaderSelector.length !== 0) {
+                loaderSelector.remove();
+            }
+
+            var thisButton = $("#panel-footer-btn-validateb");
+            buttonStatus(thisButton, false);
+
+            if (typeof saveRes !== "undefined") {
+
+                //if it is only one result
+                if (typeof saveRes.validationResult !== "undefined") {
+                    var saveResTemp = saveRes;
+                    saveRes = [];
+                    saveRes.push(saveResTemp);
+                }
+
+                var report = "";
+
+                //loop for annotation
+                saveRes.forEach(function (saveResAnno) {
+
+                    //saveResAnno = saveResAnno.validationResult;
+
+                    //information about annotation
+                    var msg = "";
+                    if (!saveResAnno.validationResult.isValid) {
+
+                        saveResAnno.validationResult.payload.errorReport.forEach(function (errorm) {
+                            msg = msg + "<div class='alert alert-danger'>" + errorm.message + "</div>";
+                        });
+
+                    } else {
+                        msg = "<div class='alert alert-success'>" + saveResAnno.validationResult.message + "</div>";
+                    }
+
+                    //var types = Object.keys(saveResAnno.validationResult.payload.annotation);
+
+                    //$.each( types, function( key, type ) {
+                    var i = 0;
+
+                    //saveResAnno.validationResult.payload.annotation[type].forEach(function (annotation) {
+                    var annotation = saveResAnno.validationResult.payload.annotation;
+                    var anno = JSON.stringify(annotation);
+                    var annohtml = "<div class='annotation'>" +
+                        msg +
+                        "<pre>" + syntaxHighlight(anno) + "</pre>" +
+                        "</div>";
+
+                    report = report + annohtml;
+                });
+
+
+                var dummy = document.createElement("div");
+                document.body.appendChild(dummy);
+                dummy.setAttribute("id", "IA_preview_id");
+
+                /*
+                var color = "rgb(217, 83, 79)";
+                var text = "Failed";
+                if (saveResAnno.validationResult.isValid) {
+                    color = "rgb(92, 184, 92)";
+                    text = "Correct";
+                }
+                */
+
+
+                $('#IA_preview_id').append(
+                    '<div class="bootstrap semantify semantify-instant-annotations">' +
+                    '<div class="modal fade" id="IA_saveModal" role="dialog">' +
+                    '<div class="modal-dialog">' +
+                    '<div class="modal-content">' +
+                    '<div class="modal-header">' +
+                    '<button type="button" class="close" data-dismiss="modal">&times;</button>' +
+                    '<h3 class="modal-title">Validation result</h3>' +
+                    '</div>' +
+                    '<div class="modal-body">' +
+                    '<br/>' +
+                    report +
+                    '<br/>' +
+                    'Would you like to see more results? Check out our <a href="https://semantify.it/validator/?mode=basic&url=' + $("#url-input input").val() + '" target="_blank">semantify.it validator</a>.' +
+                    '<br/><br/><br/>' +
+                    '<div class="modal-footer">' +
+                    '<button type="button" class="btn btn-default" data-dismiss="modal">Close</button>' +
+                    '</div>' +
+                    '</div>' +
+                    '</div>' +
+                    '</div>' +
+                    '</div>'
+                );
+
+
+                $('#IA_saveModal')
+                    .modal()
+                    .on('hidden.bs.modal', function () {
+                        $(this).remove();
+                    });
+
+            }
+
+            else {
+                snackBarOptions["content"] = "There was an error validating annotation to semantify.it";
+                $.snackbar(snackBarOptions);
+            }
+        }
+
+    }
+
+
+}
+;
