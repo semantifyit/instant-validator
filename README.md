@@ -3,7 +3,7 @@
 # Instant Validator
 
 
-# Adding The Instant-Validator To Your Website
+## Adding The Instant-Validator To Your Website
 
 
 ### CSS
@@ -84,7 +84,7 @@ If you would like to change some behavior, you can use settings.
          wp: false
      };
 
-     IA_Init(settings);
+     IV_Init(settings);
 </script>
 ```
 
