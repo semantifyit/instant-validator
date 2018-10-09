@@ -455,7 +455,10 @@ this.IV_Init = function (settings) {
         function addBox($jqueryElement, myPanelId, ds, buttons, sub, title, cb) {
 
             $('#loading' + myPanelId).hide();
-            var dsName = "Annotation Validator";
+            if(title===""){
+                title = "Instant Validation";
+            }
+            var dsName = title;
 
 
             var footer = (buttons && buttons.length > 0 ? '<div class="panel-footer text-center" id="panel-footer-' + myPanelId + '">' + '</div>' : '');      //only display footer if there are some buttons
